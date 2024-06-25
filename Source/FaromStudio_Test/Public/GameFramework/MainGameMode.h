@@ -6,9 +6,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "MainGameMode.generated.h"
 
-/**
- * 
- */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGameStarted);
+
 UCLASS()
 class FAROMSTUDIO_TEST_API AMainGameMode : public AGameModeBase
 {
@@ -18,8 +17,9 @@ class FAROMSTUDIO_TEST_API AMainGameMode : public AGameModeBase
 
 public:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 
-	virtual void StartMatch() override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
 
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
@@ -27,7 +27,8 @@ public:
 	void OnGatesHit(ETeam Team);
 
 protected:
-	virtual bool ReadyToStartMatch_Implementation() override;
+	void StartMatch();
+	bool ReadyToStartMatch();
 
 	void SpawnBall();
 
@@ -42,10 +43,12 @@ private:
 //  Variables
 
 public:
+	FOnGameStarted OnGameStarted;
+
+protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MainGameMode")
 	int32 ReqPlayers = 2;
 
-protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MainGameMode")
 	TSubclassOf<class AActor> SpawnPointClass;
 
@@ -55,7 +58,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MainGameMode")
 	TMap<ETeam, int32> Score;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MainGameMode")
+	int NumPlayers = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MainGameMode")
+	bool bGameStarted = false;
+
 private:
-	bool bFirstPlayer = true;
-	
 };

@@ -32,19 +32,28 @@ public:
 	UFUNCTION(Client, Reliable)
 	void OnGatesHit(int32 FirstTeamScore, int32 SecondTeamScore);
 
+	UFUNCTION()
+	void OnGameStarted();
+
+	UFUNCTION(Client, Reliable)
+	void Client_OnGameStarted();
+
 protected:
 	virtual void BeginPlay() override;
 
 	virtual void SetupInputComponent() override;
 
 	void Input_MovePlatform(float AxisValue);
-	UFUNCTION(Server, Reliable, WithValidation)
+	UFUNCTION(Server, unreliable, WithValidation)
 	void Server_MovePlatform(float AxisValue);
 	UFUNCTION(NetMulticast, unreliable)
 	void Multicast_MovePlatform(float AxisValue);
 
 private:
 	void CreateMainUI();
+
+	void CreateWaitingUI();
+	void DestroyWaitingUI();
 
 //  Variables
 
@@ -67,6 +76,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UMainUI* MainUI;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MainPlayerController")
+	TSubclassOf<class UUserWidget> WaitingUIClass;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UUserWidget* WaitingUI;
 
 private:
 	

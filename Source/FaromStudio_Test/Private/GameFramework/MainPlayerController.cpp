@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "BallGates.h"
 #include "MainUI.h"
+#include "GameFramework/MainGameMode.h"
 
 AMainPlayerController::AMainPlayerController()
 {
@@ -15,6 +16,12 @@ void AMainPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AMainPlayerController, PlayerTeam);
+}
+
+void AMainPlayerController::OnGameStarted()
+{
+	LOG("OnGameStarted");
+	Client_OnGameStarted();
 }
 
 void AMainPlayerController::OnGatesHit_Implementation(int32 FirstTeamScore, int32 SecondTeamScore)
@@ -35,20 +42,38 @@ void AMainPlayerController::OnGatesHit_Implementation(int32 FirstTeamScore, int3
 	}
 }
 
+void AMainPlayerController::Client_OnGameStarted_Implementation()
+{
+	LOG("Client_OnGameStarted");
+	DestroyWaitingUI();
+	CreateMainUI();
+}
+
 void AMainPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
 	// For some reason one of the clients' direction changes chaotically,
 	// so I decided to set the direction in the MovePlatform function
+	// (essentially every frame, which is BAD, I know)
 	//if (APawn* PPawn = GetPawn())
 	//{
 	//	Direction = PPawn->GetActorLocation().Y > 0 ? 1 : -1;
 	//}
 
-	if (IsLocalController())
+	if (HasAuthority())
 	{
-		CreateMainUI();
+		if (AMainGameMode* GM = GetWorld()->GetAuthGameMode<AMainGameMode>())
+		{
+			GM->OnGameStarted.AddDynamic(this, &AMainPlayerController::OnGameStarted);
+		}
+	}
+	else
+	{
+		if (!MainUI)
+		{
+			CreateWaitingUI();
+		}
 	}
 }
 
@@ -88,6 +113,27 @@ void AMainPlayerController::CreateMainUI()
 
 			MainUI->AddToViewport();
 		}
+	}
+}
+
+void AMainPlayerController::CreateWaitingUI()
+{
+	if (WaitingUIClass)
+	{
+		WaitingUI = CreateWidget<UUserWidget>(this, WaitingUIClass);
+		if (WaitingUI)
+		{
+			WaitingUI->AddToViewport();
+		}
+	}
+}
+
+void AMainPlayerController::DestroyWaitingUI()
+{
+	LOG("Destroying Waiting UI")
+	if (WaitingUI)
+	{
+		WaitingUI->RemoveFromParent();
 	}
 }
 

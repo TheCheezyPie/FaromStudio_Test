@@ -23,21 +23,31 @@ void AMainGameMode::BeginPlay()
 	}
 }
 
-void AMainGameMode::StartMatch()
+void AMainGameMode::Tick(float DeltaTime)
 {
-	Super::StartMatch();
-	
-	Multicast_SpawnBall();
+	Super::Tick(DeltaTime);
 
-	Score.Add(ETeam::First, 0);
-	Score.Add(ETeam::Second, 0);
+	if (!bGameStarted && ReadyToStartMatch())
+	{
+		StartMatch();
+		bGameStarted = true;
+	}
+}
+
+void AMainGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+
+	if (NewPlayer)
+	{
+		NumPlayers++;
+	}
 }
 
 AActor* AMainGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
 	AActor* PlayerStart = nullptr;
-	
-	LOG("NumPlayers: %d", NumPlayers);
+
 	if (NumPlayers == 0)
 	{
 		PlayerStart = FindPlayerStart(Player, "First");
@@ -84,9 +94,18 @@ void AMainGameMode::OnGatesHit(ETeam Team)
 	}
 }
 
-bool AMainGameMode::ReadyToStartMatch_Implementation()
+void AMainGameMode::StartMatch()
 {
-	return Super::ReadyToStartMatch_Implementation() && NumPlayers == ReqPlayers;
+	Score.Add(ETeam::First, 0);
+	Score.Add(ETeam::Second, 0);
+
+	Multicast_SpawnBall();
+	OnGameStarted.Broadcast();
+}
+
+bool AMainGameMode::ReadyToStartMatch()
+{
+	return NumPlayers == ReqPlayers;
 }
 
 void AMainGameMode::SpawnBall()
