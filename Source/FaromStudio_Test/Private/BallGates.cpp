@@ -13,9 +13,7 @@ ABallGates::ABallGates()
 	BoxComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 	BoxComponent->SetGenerateOverlapEvents(true);
 
-	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
-	StaticMeshComponent->SetupAttachment(GetRootComponent());
-
+	// To avoid casting
 	Tags.Add("Gates");
 }
 

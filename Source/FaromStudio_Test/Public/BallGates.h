@@ -7,7 +7,7 @@
 
 #include "BallGates.generated.h"
 
-
+// When the ball enters the gate
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBallGatesOverlap, ETeam, Team);
 
 UCLASS()
@@ -45,9 +45,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UBoxComponent* BoxComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class UStaticMeshComponent* StaticMeshComponent;
 
 private:
 

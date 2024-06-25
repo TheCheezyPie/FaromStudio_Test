@@ -43,14 +43,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UStaticMeshComponent* CannonBallMesh;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	FVector MoveDirection{};
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Speed = 400.f;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float StartZ = 0.f;
+	class UProjectileMovementComponent* ProjectileMovement;
 
 private:
 

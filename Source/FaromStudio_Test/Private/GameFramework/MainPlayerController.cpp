@@ -18,9 +18,15 @@ void AMainPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(AMainPlayerController, PlayerTeam);
 }
 
+void AMainPlayerController::OnPossess(APawn* aPawn)
+{
+	Super::OnPossess(aPawn);
+
+	Direction = aPawn->GetActorLocation().Y > 0 ? 1 : -1;
+}
+
 void AMainPlayerController::OnGameStarted()
 {
-	LOG("OnGameStarted");
 	Client_OnGameStarted();
 }
 
@@ -44,7 +50,6 @@ void AMainPlayerController::OnGatesHit_Implementation(int32 FirstTeamScore, int3
 
 void AMainPlayerController::Client_OnGameStarted_Implementation()
 {
-	LOG("Client_OnGameStarted");
 	DestroyWaitingUI();
 	CreateMainUI();
 }
@@ -52,14 +57,6 @@ void AMainPlayerController::Client_OnGameStarted_Implementation()
 void AMainPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// For some reason one of the clients' direction changes chaotically,
-	// so I decided to set the direction in the MovePlatform function
-	// (essentially every frame, which is BAD, I know)
-	//if (APawn* PPawn = GetPawn())
-	//{
-	//	Direction = PPawn->GetActorLocation().Y > 0 ? 1 : -1;
-	//}
 
 	if (HasAuthority())
 	{
@@ -70,6 +67,8 @@ void AMainPlayerController::BeginPlay()
 	}
 	else
 	{
+		// To make sure the waiting UI is not created in case of 
+		// a desync between the server and the client
 		if (!MainUI)
 		{
 			CreateWaitingUI();
@@ -80,6 +79,19 @@ void AMainPlayerController::BeginPlay()
 void AMainPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	HandleActionsMovement(DeltaTime);
+}
+
+void AMainPlayerController::HandleActionsMovement(float DeltaTime)
+{
+	if (HasAuthority() && FMath::Abs(MovementActionValue) > 0.01f)
+	{
+		if (APawn* PPawn = GetPawn())
+		{
+			PPawn->AddActorWorldOffset(FVector(MovementActionValue * MoveSpeed * DeltaTime * 3.f, 0, 0) * GetDirection(), true);
+		}
+	}
 }
 
 void AMainPlayerController::SetupInputComponent()
@@ -87,16 +99,47 @@ void AMainPlayerController::SetupInputComponent()
 	Super::SetupInputComponent();
 
 	InputComponent->BindAxis("Move", this, &AMainPlayerController::Input_MovePlatform);
+
+	InputComponent->BindAction("MoveLeft", IE_Pressed, this, &AMainPlayerController::Input_MoveLeft);
+	InputComponent->BindAction("MoveRight", IE_Pressed, this, &AMainPlayerController::Input_MoveRight);
+
+	InputComponent->BindAction("MoveLeft", IE_Released, this, &AMainPlayerController::Stop_MoveLeft);
+	InputComponent->BindAction("MoveRight", IE_Released, this, &AMainPlayerController::Stop_MoveRight);
+}
+
+void AMainPlayerController::Input_MoveLeft_Implementation()
+{
+	MovementActionValue = -1.0f;
+}
+
+void AMainPlayerController::Input_MoveRight_Implementation()
+{
+	MovementActionValue = 1.0f;
+}
+
+void AMainPlayerController::Stop_MoveLeft_Implementation()
+{
+	if (MovementActionValue < 0)
+	{
+		MovementActionValue = 0;
+	}
+}
+
+void AMainPlayerController::Stop_MoveRight_Implementation()
+{
+	if (MovementActionValue > 0)
+	{
+		MovementActionValue = 0;
+	}
 }
 
 void AMainPlayerController::Input_MovePlatform(float AxisValue)
 {
+	// To avoid RPCs every tick
+	// They still are techincally called ON tick
+	// but the value is checked to avoid EVERY tick
 	if (FMath::Abs(AxisValue) > 0.01f)
 	{
-		if (Tags.IsValidIndex(0))
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, Tags[0].ToString());
-		}
 		Server_MovePlatform(AxisValue);
 	}
 }
@@ -130,7 +173,6 @@ void AMainPlayerController::CreateWaitingUI()
 
 void AMainPlayerController::DestroyWaitingUI()
 {
-	LOG("Destroying Waiting UI")
 	if (WaitingUI)
 	{
 		WaitingUI->RemoveFromParent();
@@ -139,19 +181,9 @@ void AMainPlayerController::DestroyWaitingUI()
 
 void AMainPlayerController::Server_MovePlatform_Implementation(float AxisValue)
 {
-	Multicast_MovePlatform(AxisValue);
-}
-
-bool AMainPlayerController::Server_MovePlatform_Validate(float AxisValue)
-{
-	return true;
-}
-
-void AMainPlayerController::Multicast_MovePlatform_Implementation(float AxisValue)
-{
 	if (APawn* PPawn = GetPawn())
 	{
-		Direction = PPawn->GetActorLocation().Y > 0 ? 1 : -1;
-		PPawn->AddActorWorldOffset(FVector(AxisValue * MoveSpeed, 0, 0) * GetDirection(), true);
+		float DeltaTime = GetWorld()->GetDeltaSeconds();
+		PPawn->AddActorWorldOffset(FVector(AxisValue * MoveSpeed * DeltaTime, 0, 0) * GetDirection(), true);
 	}
 }

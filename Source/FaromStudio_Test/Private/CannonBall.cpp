@@ -7,6 +7,7 @@
 #include "BallGates.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/FloatingPawnMovement.h"
+#include "GameFramework/ProjectileMovementComponent.h"
 
 ACannonBall::ACannonBall()
 {
@@ -20,8 +21,22 @@ ACannonBall::ACannonBall()
 	CannonBallMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CannonBallMesh"));
 	CannonBallMesh->SetupAttachment(GetRootComponent());
 
-	Tags.Add(FName("CannonBall"));
+	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 
+	ProjectileMovement->InitialSpeed = 1000.f;
+	ProjectileMovement->MaxSpeed = 1000.f;
+
+	ProjectileMovement->bShouldBounce = true;
+	ProjectileMovement->Bounciness = 1.f;
+	ProjectileMovement->Friction = 0.f;
+
+	ProjectileMovement->ProjectileGravityScale = 0.f;
+
+	ProjectileMovement->bConstrainToPlane = true;
+	ProjectileMovement->SetPlaneConstraintAxisSetting(EPlaneConstraintAxisSetting::Z);
+
+	// To avoid casting
+	Tags.Add(FName("CannonBall"));
 }
 
 void ACannonBall::BeginPlay()

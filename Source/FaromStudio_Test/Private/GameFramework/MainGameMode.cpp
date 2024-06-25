@@ -10,6 +10,7 @@ void AMainGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Subscribe to gates' delegates
 	TArray<AActor*> GatesArray;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallGates::StaticClass(), GatesArray);
 
@@ -21,6 +22,7 @@ void AMainGameMode::BeginPlay()
 			BallGate->OnBallGatesOverlap.AddDynamic(this, &AMainGameMode::OnGatesHit);
 		}
 	}
+	// Subscribe to gates' delegates
 }
 
 void AMainGameMode::Tick(float DeltaTime)
@@ -99,7 +101,7 @@ void AMainGameMode::StartMatch()
 	Score.Add(ETeam::First, 0);
 	Score.Add(ETeam::Second, 0);
 
-	Multicast_SpawnBall();
+	SpawnBall();
 	OnGameStarted.Broadcast();
 }
 
@@ -132,12 +134,7 @@ void AMainGameMode::SpawnBall()
 	}
 }
 
-void AMainGameMode::Multicast_SpawnBall_Implementation()
-{
-	SpawnBall();
-}
-
 void AMainGameMode::SpawnBall_Delegate(AActor* DestroyedActor)
 {
-	Multicast_SpawnBall();
+	SpawnBall();
 }
