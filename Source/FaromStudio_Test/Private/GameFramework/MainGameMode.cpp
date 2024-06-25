@@ -2,6 +2,36 @@
 
 #include "GameFramework/MainGameMode.h"
 #include "GameFramework/MainPlayerController.h"
+#include "CannonBall.h"
+#include "BallGates.h"
+#include "Kismet/GameplayStatics.h"
+
+void AMainGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	TArray<AActor*> GatesArray;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallGates::StaticClass(), GatesArray);
+
+	for (AActor* Gate : GatesArray)
+	{
+		ABallGates* BallGate = StaticCast<ABallGates*>(Gate);
+		if (BallGate)
+		{
+			BallGate->OnBallGatesOverlap.AddDynamic(this, &AMainGameMode::OnGatesHit);
+		}
+	}
+}
+
+void AMainGameMode::StartMatch()
+{
+	Super::StartMatch();
+	
+	Multicast_SpawnBall();
+
+	Score.Add(ETeam::First, 0);
+	Score.Add(ETeam::Second, 0);
+}
 
 void AMainGameMode::PostLogin(APlayerController* NewPlayer)
 {
@@ -11,14 +41,63 @@ void AMainGameMode::PostLogin(APlayerController* NewPlayer)
 	{
 		if (bFirstPlayer)
 		{
-			PC->Client_AddTag("First");
-			//NewPlayer->Tags.Add("First");
+			PC->SetTeam(ETeam::First);
+
 			bFirstPlayer = false;
 		}
 		else
 		{
-			PC->Client_AddTag("Second");
-			//NewPlayer->Tags.Add("Second");
+			PC->SetTeam(ETeam::Second);
+		}
+	}
+}
+
+AActor* AMainGameMode::ChoosePlayerStart_Implementation(AController* Player)
+{
+	AActor* PlayerStart = nullptr;
+
+	if (NumPlayers == 1)
+	{
+		PlayerStart = FindPlayerStart(Player, "First");
+		if (PlayerStart)
+		{
+			AMainPlayerController* PC = StaticCast<AMainPlayerController*>(Player);
+			PC->SetTeam(ETeam::First);
+		}
+	}
+	else
+	{
+		PlayerStart = FindPlayerStart(Player, "First");
+		if (PlayerStart)
+		{
+			AMainPlayerController* PC = StaticCast<AMainPlayerController*>(Player);
+			PC->SetTeam(ETeam::First);
+		}
+	}
+
+	return PlayerStart;
+}
+
+void AMainGameMode::OnGatesHit(ETeam Team)
+{
+	if (Score.Contains(Team))
+	{
+		switch (Team)
+		{
+		case ETeam::First:
+			Score[ETeam::Second]++;
+			break;
+		case ETeam::Second:
+			Score[ETeam::First]++;
+			break;
+		}
+	}
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (AMainPlayerController* PC = StaticCast<AMainPlayerController*>(It->Get()))
+		{
+			PC->OnGatesHit(Score[ETeam::First], Score[ETeam::Second]);
 		}
 	}
 }
@@ -26,4 +105,38 @@ void AMainGameMode::PostLogin(APlayerController* NewPlayer)
 bool AMainGameMode::ReadyToStartMatch_Implementation()
 {
 	return Super::ReadyToStartMatch_Implementation() && NumPlayers == ReqPlayers;
+}
+
+void AMainGameMode::SpawnBall()
+{
+	if (SpawnPointClass)
+	{
+		TArray<AActor*> Array;
+		UGameplayStatics::GetAllActorsOfClass(this, SpawnPointClass, Array);
+		
+		if (Array.Num() == 0) return;
+
+		AActor* BallSpawnPoint = Array[0];
+
+		if (BallSpawnPoint && BallClass)
+		{
+			FRotator RandomDirection = FRotator(0.f, FMath::RandRange(-180.f, 180.f), 0.f);
+
+			ACannonBall* Ball = GetWorld()->SpawnActor<ACannonBall>(BallClass, BallSpawnPoint->GetActorLocation(), RandomDirection);
+			if (Ball)
+			{
+				Ball->OnDestroyed.AddDynamic(this, &AMainGameMode::SpawnBall_Delegate);
+			}
+		}
+	}
+}
+
+void AMainGameMode::Multicast_SpawnBall_Implementation()
+{
+	SpawnBall();
+}
+
+void AMainGameMode::SpawnBall_Delegate(AActor* DestroyedActor)
+{
+	Multicast_SpawnBall();
 }

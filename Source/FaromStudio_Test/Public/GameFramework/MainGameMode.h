@@ -17,10 +17,27 @@ class FAROMSTUDIO_TEST_API AMainGameMode : public AGameMode
 //  Functions
 
 public:
+	virtual void BeginPlay() override;
+
+	virtual void StartMatch() override;
+
 	virtual void PostLogin(APlayerController* NewPlayer) override;
+
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+
+	UFUNCTION()
+	void OnGatesHit(ETeam Team);
 
 protected:
 	virtual bool ReadyToStartMatch_Implementation() override;
+
+	void SpawnBall();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SpawnBall();
+
+	UFUNCTION()
+	void SpawnBall_Delegate(AActor* DestroyedActor);
 
 private:
 
@@ -31,6 +48,14 @@ public:
 	int32 ReqPlayers = 2;
 
 protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MainGameMode")
+	TSubclassOf<class AActor> SpawnPointClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MainGameMode")
+	TSubclassOf<class ACannonBall> BallClass;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MainGameMode")
+	TMap<ETeam, int32> Score;
 
 private:
 	bool bFirstPlayer = true;

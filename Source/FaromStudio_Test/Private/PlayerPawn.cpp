@@ -21,6 +21,8 @@ APlayerPawn::APlayerPawn()
 
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	CameraComponent->SetupAttachment(SpringArmComponent);
+
+	Tags.Add("Player");
 }
 
 void APlayerPawn::BeginPlay()
@@ -33,6 +35,7 @@ void APlayerPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//SCREEN_LOG("Velocity: %s", *GetVelocity().ToString());
 }
 
 void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

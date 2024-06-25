@@ -1,15 +1,38 @@
 
 
 #include "GameFramework/MainPlayerController.h"
-#include "Net\UnrealNetwork.h"
+#include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
+#include "BallGates.h"
+#include "MainUI.h"
 
 AMainPlayerController::AMainPlayerController()
 {
 }
 
-void AMainPlayerController::Client_AddTag_Implementation(const FName& Tag)
+void AMainPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	Tags.Add(Tag);
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AMainPlayerController, PlayerTeam);
+}
+
+void AMainPlayerController::OnGatesHit_Implementation(int32 FirstTeamScore, int32 SecondTeamScore)
+{
+	if (MainUI)
+	{
+		switch (PlayerTeam)
+		{
+		case ETeam::First:
+			MainUI->SetMyTeamScore(FirstTeamScore);
+			MainUI->SetEnemyTeamScore(SecondTeamScore);
+			break;
+		case ETeam::Second:
+			MainUI->SetMyTeamScore(SecondTeamScore);
+			MainUI->SetEnemyTeamScore(FirstTeamScore);
+			break;
+		}
+	}
 }
 
 void AMainPlayerController::BeginPlay()
@@ -22,6 +45,11 @@ void AMainPlayerController::BeginPlay()
 	//{
 	//	Direction = PPawn->GetActorLocation().Y > 0 ? 1 : -1;
 	//}
+
+	if (IsLocalController())
+	{
+		CreateMainUI();
+	}
 }
 
 void AMainPlayerController::Tick(float DeltaTime)
@@ -45,6 +73,21 @@ void AMainPlayerController::Input_MovePlatform(float AxisValue)
 			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, Tags[0].ToString());
 		}
 		Server_MovePlatform(AxisValue);
+	}
+}
+
+void AMainPlayerController::CreateMainUI()
+{
+	if (MainUIClass)
+	{
+		MainUI = CreateWidget<UMainUI>(this, MainUIClass);
+		if (MainUI)
+		{
+			MainUI->SetMyTeamScore(0);
+			MainUI->SetEnemyTeamScore(0);
+
+			MainUI->AddToViewport();
+		}
 	}
 }
 
