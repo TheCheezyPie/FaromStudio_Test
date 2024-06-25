@@ -33,30 +33,12 @@ void AMainGameMode::StartMatch()
 	Score.Add(ETeam::Second, 0);
 }
 
-void AMainGameMode::PostLogin(APlayerController* NewPlayer)
-{
-	Super::PostLogin(NewPlayer);
-
-	if (AMainPlayerController* PC = StaticCast<AMainPlayerController*>(NewPlayer))
-	{
-		if (bFirstPlayer)
-		{
-			PC->SetTeam(ETeam::First);
-
-			bFirstPlayer = false;
-		}
-		else
-		{
-			PC->SetTeam(ETeam::Second);
-		}
-	}
-}
-
 AActor* AMainGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
 	AActor* PlayerStart = nullptr;
-
-	if (NumPlayers == 1)
+	
+	LOG("NumPlayers: %d", NumPlayers);
+	if (NumPlayers == 0)
 	{
 		PlayerStart = FindPlayerStart(Player, "First");
 		if (PlayerStart)
@@ -67,11 +49,11 @@ AActor* AMainGameMode::ChoosePlayerStart_Implementation(AController* Player)
 	}
 	else
 	{
-		PlayerStart = FindPlayerStart(Player, "First");
+		PlayerStart = FindPlayerStart(Player, "Second");
 		if (PlayerStart)
 		{
 			AMainPlayerController* PC = StaticCast<AMainPlayerController*>(Player);
-			PC->SetTeam(ETeam::First);
+			PC->SetTeam(ETeam::Second);
 		}
 	}
 

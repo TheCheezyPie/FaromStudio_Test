@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameMode.h"
+#include "GameFramework/GameModeBase.h"
 #include "MainGameMode.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class FAROMSTUDIO_TEST_API AMainGameMode : public AGameMode
+class FAROMSTUDIO_TEST_API AMainGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
@@ -20,8 +20,6 @@ public:
 	virtual void BeginPlay() override;
 
 	virtual void StartMatch() override;
-
-	virtual void PostLogin(APlayerController* NewPlayer) override;
 
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
