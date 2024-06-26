@@ -23,6 +23,7 @@ void AMainPlayerController::OnPossess(APawn* aPawn)
 	Super::OnPossess(aPawn);
 
 	Direction = aPawn->GetActorLocation().Y > 0 ? 1 : -1;
+	SetClientDirection(Direction);
 }
 
 void AMainPlayerController::OnGameStarted()
@@ -52,6 +53,11 @@ void AMainPlayerController::Client_OnGameStarted_Implementation()
 {
 	DestroyWaitingUI();
 	CreateMainUI();
+}
+
+void AMainPlayerController::SetClientDirection_Implementation(int32 NewDirection)
+{
+	Direction = NewDirection;
 }
 
 void AMainPlayerController::BeginPlay()
@@ -140,6 +146,14 @@ void AMainPlayerController::Input_MovePlatform(float AxisValue)
 	// but the value is checked to avoid EVERY tick
 	if (FMath::Abs(AxisValue) > 0.01f)
 	{
+		if (APawn* PPawn = GetPawn())
+		{
+			LOG("CLIENT Direction: %d", GetDirection());
+			float DeltaTime = GetWorld()->GetDeltaSeconds();
+			FVector DeltaLocation = FVector(AxisValue * MoveSpeed * DeltaTime, 0, 0) * GetDirection();
+
+			PPawn->AddActorWorldOffset(DeltaLocation, true);
+		}
 		Server_MovePlatform(AxisValue);
 	}
 }
@@ -183,6 +197,7 @@ void AMainPlayerController::Server_MovePlatform_Implementation(float AxisValue)
 {
 	if (APawn* PPawn = GetPawn())
 	{
+		LOG("SERVER Direction: %d", GetDirection());
 		float DeltaTime = GetWorld()->GetDeltaSeconds();
 		FVector DeltaLocation = FVector(AxisValue * MoveSpeed * DeltaTime, 0, 0) * GetDirection();
 

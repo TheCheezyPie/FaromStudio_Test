@@ -40,6 +40,8 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_OnGameStarted();
 
+	UFUNCTION(Client, Reliable)
+	void SetClientDirection(int32 NewDirection);
 	FORCEINLINE int32 GetDirection() const { return Direction; }
 
 	FORCEINLINE void SetTeam(ETeam NewTeam) { PlayerTeam = NewTeam; }
