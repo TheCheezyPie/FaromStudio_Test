@@ -184,6 +184,8 @@ void AMainPlayerController::Server_MovePlatform_Implementation(float AxisValue)
 	if (APawn* PPawn = GetPawn())
 	{
 		float DeltaTime = GetWorld()->GetDeltaSeconds();
-		PPawn->AddActorWorldOffset(FVector(AxisValue * MoveSpeed * DeltaTime, 0, 0) * GetDirection(), true);
+		FVector DeltaLocation = FVector(AxisValue * MoveSpeed * DeltaTime, 0, 0) * GetDirection();
+
+		PPawn->AddActorWorldOffset(DeltaLocation, true);
 	}
 }

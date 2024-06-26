@@ -49,15 +49,21 @@ protected:
 
 	virtual void SetupInputComponent() override;
 
-	UFUNCTION(Server, Reliable)
-	void Input_MoveLeft();
-	UFUNCTION(Server, Reliable)
-	void Input_MoveRight();
+	// Functions to workaroud the movement RPCs on tick
+	// Only triggered by ActionMovement (A, D) (Press)
+		UFUNCTION(Server, Reliable)
+		void Input_MoveLeft();
+		UFUNCTION(Server, Reliable)
+		void Input_MoveRight();
+	//
 
-	UFUNCTION(Server, Reliable)
-	void Stop_MoveLeft();
-	UFUNCTION(Server, Reliable)
-	void Stop_MoveRight();
+	// Functions to workaroud the movement RPCs on tick
+	// Only triggered by ActionMovement (A, D) (Release)
+		UFUNCTION(Server, Reliable)
+		void Stop_MoveLeft();
+		UFUNCTION(Server, Reliable)
+		void Stop_MoveRight();
+	//
 
 	// Called when the player presses the movement button
 	// On the client side
